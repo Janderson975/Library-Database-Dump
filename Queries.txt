@@ -1,0 +1,104 @@
+-- Question 1: Which book has the highest global sales in the past year?
+SELECT
+books."Title",
+books."AuthorID", 
+SUM(book_performance."SalesQuality") AS "TotalSales"
+FROM "book_performance"
+JOIN "books" ON book_performance."ISBN" = books."ISBN"
+JOIN "authors" ON books."AuthorID" = authors."AuthorID"
+WHERE book_performance."RegionID" IS NOT NULL
+GROUP BY books."Title", books."AuthorID"
+ORDER BY "TotalSales" DESC
+LIMIT 1;
+
+-- Question 2: How do sales of a specific genre vary across different regions?
+SELECT 
+regions."RegionName", 
+SUM(book_performance."SalesQuality") AS "TotalSales"
+FROM "book_performance"
+JOIN "books" ON book_performance."ISBN" = books."ISBN"
+JOIN "regions" ON book_performance."RegionID" = regions."RegionID"
+WHERE books."Genre" ILIKE 'Fantasy'
+GROUP BY regions."RegionName"
+ORDER BY "TotalSales" DESC;
+
+
+-- Question 3: Who are the top 5 bestselling authors in each region?
+SELECT
+regions."RegionName", 
+books."AuthorID" AS "AuthorName", 
+SUM(book_performance."SalesQuality") AS "TotalSales"
+FROM "book_performance"
+JOIN "books" ON book_performance."ISBN" = books."ISBN"
+JOIN "authors" ON books."AuthorID" = authors."AuthorID"
+JOIN "regions" ON book_performance."RegionID" = regions."RegionID"
+GROUP BY regions."RegionName", authors."Name", books."AuthorID"
+ORDER BY regions."RegionName", "TotalSales" DESC
+LIMIT 5;
+
+-- Question 4: What is the average rating of books from a particular publisher across all regions?
+SELECT 
+publishers."Name" AS "PublisherName", 
+AVG(book_performance."AverageRating") AS "AverageRating"
+FROM "book_performance"
+JOIN "books" ON book_performance."ISBN" = books."ISBN"
+JOIN "publishers" ON books."PublisherID" = publishers."PublisherID"
+WHERE publishers."Name" = 'Bloomsbury'
+GROUP BY publishers."Name";
+
+-- Question 5: Which regions have the highest average book ratings?
+SELECT 
+regions."RegionName", AVG(book_performance."AverageRating") AS "AverageRating"
+FROM "book_performance"
+JOIN "regions" ON book_performance."RegionID" = regions."RegionID"
+GROUP BY regions."RegionName"
+ORDER BY "AverageRating" DESC
+LIMIT 5;
+
+
+-- Question 6: How do book sales correlate with their average ratings in different regions?
+SELECT "RegionName", "SalesRatingCorrelation"
+FROM (
+    SELECT 
+        regions."RegionName", 
+        (SELECT CORR(book_performance."SalesQuality", book_performance."AverageRating")
+         FROM "book_performance"
+         WHERE book_performance."RegionID" = regions."RegionID") AS "SalesRatingCorrelation"
+    FROM "regions"
+) AS CorrelationData
+WHERE "SalesRatingCorrelation" IS NOT NULL;
+
+
+-- Question 7: What is the trend of sales for a particular author over time across different regions?
+SELECT 
+books."AuthorID", 
+authors."Name" AS "AuthorName", 
+books."Title", book_performance."RegionID", 
+SUM(book_performance."SalesQuality") AS "TotalSales"
+FROM "book_performance"
+JOIN "books" ON book_performance."ISBN" = books."ISBN"
+JOIN "authors" ON books."AuthorID" = authors."AuthorID"
+WHERE books."AuthorID" = 1
+GROUP BY books."AuthorID", authors."Name", books."Title", book_performance."RegionID";
+
+
+-- Question 8: What is the total sale of each genre in each region?
+SELECT 
+regions."RegionName", books."Genre", 
+SUM(book_performance."SalesQuality") AS "TotalSales", AVG(book_performance."AverageRating") AS "AverageRating"
+FROM "book_performance"
+JOIN "books" ON book_performance."ISBN" = books."ISBN"
+JOIN "regions" ON book_performance."RegionID" = regions."RegionID"
+GROUP BY regions."RegionName", books."Genre"
+ORDER BY regions."RegionName", "TotalSales" DESC;
+
+-- Question 9:What are the title, author, and publication year of the book with ISBN X?
+SELECT 
+    authors."Name" AS "AuthorName",
+    books."ISBN",
+    books."Title",
+    books."PublicationYear"
+FROM "books"
+JOIN "authors" ON books."AuthorID" = authors."AuthorID"
+JOIN "publishers" ON books."PublisherID" = publishers."PublisherID"
+WHERE books."ISBN" = '9780141439600';
